@@ -1,4 +1,7 @@
 use std::io::{self, Write};
+mod builtin;
+
+use builtin::Builtin;
 
 fn main() {
     loop {
@@ -18,8 +21,11 @@ fn main() {
             None => (input, ""),
         };
 
-        if cmd == "exit" {
-            break;
+        if let Some(builtin) = Builtin::parse(cmd) {
+            builtin.execute();
+            continue;
         }
+        
+        println!("{}: command not found", cmd);
     }
 }
