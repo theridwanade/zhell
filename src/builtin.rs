@@ -54,7 +54,7 @@ impl Builtin {
 
                 match env::set_current_dir(&target_dir) {
                     Ok(_) => {}
-                    Err(_e) => eprintln!("cd: {} No such file or directory", target_dir),
+                    Err(_e) => eprintln!("cd: {}: No such file or directory", target_dir),
                 }
             }
         }
