@@ -22,7 +22,7 @@ fn main() {
         };
 
         if let Some(builtin) = Builtin::parse(cmd) {
-            builtin.execute();
+            builtin.execute(args);
             continue;
         }
         
