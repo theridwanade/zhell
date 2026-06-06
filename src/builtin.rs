@@ -1,3 +1,5 @@
+use crate::utils::find_in_path;
+
 pub enum Builtin {
     Exit,
     Echo,
@@ -21,6 +23,8 @@ impl Builtin {
             Builtin::Type => {
                 if Builtin::parse(args).is_some() {
                     println!("{} is shell builtin", args);
+                } else if let Some(path) = find_in_path(args) {
+                    println!("{} is {}", args, path.display());
                 } else {
                     println!("{}: not found", args);
                 }
