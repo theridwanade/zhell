@@ -1,9 +1,12 @@
+use std::env;
+
 use crate::utils::find_in_path;
 
 pub enum Builtin {
     Exit,
     Echo,
     Type,
+    Pwd,
 }
 
 impl Builtin {
@@ -12,6 +15,7 @@ impl Builtin {
             "exit" => Some(Builtin::Exit),
             "echo" => Some(Builtin::Echo),
             "type" => Some(Builtin::Type),
+            "pwd" => Some(Builtin::Pwd),
             _ => None,
         }
     }
@@ -27,6 +31,13 @@ impl Builtin {
                     println!("{} is {}", args, path.display());
                 } else {
                     println!("{}: not found", args);
+                }
+            }
+            Builtin::Pwd => {
+                if let Ok(current_dir) = env::current_dir() {
+                    println!("{}", current_dir.display());
+                } else {
+                    eprintln!("Error getting current directory");
                 }
             }
         }
