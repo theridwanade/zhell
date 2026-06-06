@@ -7,6 +7,7 @@ pub enum Builtin {
     Echo,
     Type,
     Pwd,
+    Cd,
 }
 
 impl Builtin {
@@ -16,6 +17,7 @@ impl Builtin {
             "echo" => Some(Builtin::Echo),
             "type" => Some(Builtin::Type),
             "pwd" => Some(Builtin::Pwd),
+            "cd" => Some(Builtin::Cd),
             _ => None,
         }
     }
@@ -38,6 +40,21 @@ impl Builtin {
                     println!("{}", current_dir.display());
                 } else {
                     eprintln!("Error getting current directory");
+                }
+            }
+            Builtin::Cd => {
+                let target_dir = if args.is_empty() {
+                    match env::var("HOME") {
+                        Ok(home) => home,
+                        Err(_) => ".".to_string(),
+                    }
+                } else {
+                    args.to_string()
+                };
+
+                match env::set_current_dir(&target_dir) {
+                    Ok(_) => {}
+                    Err(_e) => eprintln!("cd: {} No such file or directory", target_dir),
                 }
             }
         }
