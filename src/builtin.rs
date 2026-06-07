@@ -65,8 +65,18 @@ impl Builtin {
                     args.to_string()
                 };
 
+                let previous_dir = match env::current_dir() {
+                    Ok(dir) => dir,
+                    Err(_) => {
+                        eprintln!("Error getting current directory");
+                        return;
+                    }
+                };
+
                 match env::set_current_dir(&target_dir) {
-                    Ok(_) => {}
+                    Ok(_) => unsafe {
+                        env::set_var("OLDPWD", previous_dir);
+                    },
                     Err(_e) => eprintln!("cd: {}: No such file or directory", target_dir),
                 }
             }
