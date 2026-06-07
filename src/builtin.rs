@@ -28,7 +28,7 @@ impl Builtin {
             Builtin::Echo => println!("{}", args),
             Builtin::Type => {
                 if Builtin::parse(args).is_some() {
-                    println!("{} is shell builtin", args);
+                    println!("{} is a shell builtin", args);
                 } else if let Some(path) = find_in_path(args) {
                     println!("{} is {}", args, path.display());
                 } else {
@@ -43,10 +43,23 @@ impl Builtin {
                 }
             }
             Builtin::Cd => {
-                let target_dir = if args.is_empty() {
+                let target_dir = if args.is_empty() || args == "~" {
                     match env::var("HOME") {
                         Ok(home) => home,
                         Err(_) => ".".to_string(),
+                    }
+                } else if args.starts_with("~/") {
+                    match env::var("HOME") {
+                        Ok(home) => format!("{}{}", home, &args[1..]),
+                        Err(_) => args.to_string(),
+                    }
+                } else if args.starts_with("-") {
+                    match env::var("OLDPWD") {
+                        Ok(oldpwd) => oldpwd,
+                        Err(_) => {
+                            eprintln!("cd: OLDPWD not set");
+                            return;
+                        }
                     }
                 } else {
                     args.to_string()
