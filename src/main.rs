@@ -23,10 +23,8 @@ fn main() {
             continue;
         }
 
-        let (cmd, args) = match input.split_once(" ") {
-            Some((c, a)) => (c, tokenize(a)),
-            None => (input, Vec::new()),
-        };
+        let cmd_token = tokenize(input);
+        let (cmd, args) = (cmd_token[0].as_str(), cmd_token[1..].to_vec());
 
         if let Some(builtin) = Builtin::parse(cmd) {
             builtin.execute(args);
