@@ -22,7 +22,7 @@ impl Builtin {
         }
     }
 
-    pub fn execute(&self, args: Vec<&str>) {
+    pub fn execute(&self, args: Vec<String>) {
         let args = args.join(" ");
         match self {
             Builtin::Exit => std::process::exit(0),
