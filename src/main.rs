@@ -3,11 +3,12 @@ use std::{
     process::Command,
 };
 mod builtin;
+mod lexer;
 mod utils;
 
 use builtin::Builtin;
 
-use crate::utils::find_in_path;
+use crate::{lexer::tokenize, utils::find_in_path};
 
 fn main() {
     loop {
@@ -23,8 +24,8 @@ fn main() {
         }
 
         let (cmd, args) = match input.split_once(" ") {
-            Some((c, a)) => (c, a.trim()),
-            None => (input, ""),
+            Some((c, a)) => (c, tokenize(a)),
+            None => (input, Vec::new()),
         };
 
         if let Some(builtin) = Builtin::parse(cmd) {
@@ -32,9 +33,7 @@ fn main() {
             continue;
         } else {
             if let Some(_path) = find_in_path(cmd) {
-                let cmd_args = args.split_whitespace();
-
-                let child = Command::new(cmd).args(cmd_args).spawn();
+                let child = Command::new(cmd).args(args).spawn();
 
                 match child {
                     Ok(mut child_process) => {
@@ -44,7 +43,7 @@ fn main() {
                         eprintln!("Error executing command: {}", e);
                     }
                 }
-            continue;
+                continue;
             }
         }
 

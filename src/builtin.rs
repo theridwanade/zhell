@@ -22,14 +22,15 @@ impl Builtin {
         }
     }
 
-    pub fn execute(&self, args: &str) {
+    pub fn execute(&self, args: Vec<&str>) {
+        let args = args.join(" ");
         match self {
             Builtin::Exit => std::process::exit(0),
             Builtin::Echo => println!("{}", args),
             Builtin::Type => {
-                if Builtin::parse(args).is_some() {
+                if Builtin::parse(args.as_str()).is_some() {
                     println!("{} is a shell builtin", args);
-                } else if let Some(path) = find_in_path(args) {
+                } else if let Some(path) = find_in_path(args.as_str()) {
                     println!("{} is {}", args, path.display());
                 } else {
                     println!("{}: not found", args);
