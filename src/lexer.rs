@@ -1,3 +1,5 @@
+use std::mem::take;
+
 pub fn tokenize(args: &str) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut current_token = String::new();
@@ -25,8 +27,7 @@ pub fn tokenize(args: &str) -> Vec<String> {
             }
             ' ' | '\t' | '\n' if !in_single_quote && !in_double_quote => {
                 if !current_token.is_empty() {
-                    tokens.push(current_token.clone());
-                    current_token.clear();
+                    tokens.push(take(&mut current_token));
                 }
             }
             _ => {
