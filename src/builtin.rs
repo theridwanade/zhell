@@ -1,4 +1,7 @@
-use std::env;
+use std::{
+    env,
+    io::{Error, ErrorKind},
+};
 
 use crate::utils::find_in_path;
 
@@ -22,27 +25,24 @@ impl Builtin {
         }
     }
 
-    pub fn execute(&self, args: Vec<String>) {
+    pub fn execute(&self, args: Vec<String>) -> Result<String, Error> {
         let args = args.join(" ");
         match self {
             Builtin::Exit => std::process::exit(0),
-            Builtin::Echo => println!("{}", args),
+            Builtin::Echo => Ok(format!("{}", args)),
             Builtin::Type => {
                 if Builtin::parse(args.as_str()).is_some() {
-                    println!("{} is a shell builtin", args);
+                    Ok(format!("{} is a shell builtin", args))
                 } else if let Some(path) = find_in_path(args.as_str()) {
-                    println!("{} is {}", args, path.display());
+                    Ok(format!("{} is {}", args, path.display()))
                 } else {
-                    println!("{}: not found", args);
+                    Ok(format!("{}: not found", args))
                 }
             }
-            Builtin::Pwd => {
-                if let Ok(current_dir) = env::current_dir() {
-                    println!("{}", current_dir.display());
-                } else {
-                    eprintln!("Error getting current directory");
-                }
-            }
+            Builtin::Pwd => match env::current_dir() {
+                Ok(current_dir) => Ok(format!("{}", current_dir.display())),
+                Err(e) => Err(e),
+            },
             Builtin::Cd => {
                 let target_dir = if args.is_empty() || args == "~" {
                     match env::var("HOME") {
@@ -58,8 +58,7 @@ impl Builtin {
                     match env::var("OLDPWD") {
                         Ok(oldpwd) => oldpwd,
                         Err(_) => {
-                            eprintln!("cd: OLDPWD not set");
-                            return;
+                            return Err(Error::new(ErrorKind::Other, "cd: OLDPWD not set"));
                         }
                     }
                 } else {
@@ -69,16 +68,24 @@ impl Builtin {
                 let previous_dir = match env::current_dir() {
                     Ok(dir) => dir,
                     Err(_) => {
-                        eprintln!("Error getting current directory");
-                        return;
+                        return Err(Error::new(
+                            ErrorKind::Other,
+                            "Error getting current directory",
+                        ));
                     }
                 };
 
                 match env::set_current_dir(&target_dir) {
-                    Ok(_) => unsafe {
-                        env::set_var("OLDPWD", previous_dir);
-                    },
-                    Err(_e) => eprintln!("cd: {}: No such file or directory", target_dir),
+                    Ok(_) => {
+                        unsafe {
+                            env::set_var("OLDPWD", previous_dir);
+                        }
+                        Ok(String::new())
+                    }
+                    Err(_) => Err(Error::new(
+                        ErrorKind::NotFound,
+                        format!("cd: {}: No such file or directory", target_dir),
+                    )),
                 }
             }
         }

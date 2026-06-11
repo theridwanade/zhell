@@ -27,7 +27,10 @@ fn main() {
         let (cmd, args) = (cmd_token[0].as_str(), cmd_token[1..].to_vec());
 
         if let Some(builtin) = Builtin::parse(cmd) {
-            builtin.execute(args);
+            match builtin.execute(args) {
+                Ok(output) => println!("{}", output),
+                Err(e) => eprintln!("Error executing builtin: {}", e),
+            }
             continue;
         } else {
             if let Some(_path) = find_in_path(cmd) {
