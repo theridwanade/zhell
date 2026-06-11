@@ -1,6 +1,7 @@
 use std::{
+    fs::File,
     io::{self, Write},
-    process::Command,
+    process::{Command, Stdio},
 };
 mod builtin;
 mod lexer;
@@ -24,19 +25,70 @@ fn main() {
         }
 
         let cmd_token = tokenize(input);
-        let (cmd, args) = (cmd_token[0].as_str(), cmd_token[1..].to_vec());
+        if cmd_token.is_empty() {
+            continue;
+        }
+
+        let (cmd, raw_args) = (cmd_token[0].as_str(), cmd_token[1..].to_vec());
+
+        let mut actual_args = Vec::new();
+        let mut output_file = None;
+        let mut i = 0;
+
+        while i < raw_args.len() {
+            if raw_args[i] == ">" || raw_args[i] == "1>" {
+                if i + 1 < raw_args.len() {
+                    output_file = Some(raw_args[i + 1].clone());
+                    i += 2;
+                } else {
+                    eprintln!("Syntax error: expected file after '{}'", raw_args[i]);
+                    break;
+                }
+            } else {
+                actual_args.push(raw_args[i].clone());
+                i += 1;
+            }
+        }
 
         if let Some(builtin) = Builtin::parse(cmd) {
-            match builtin.execute(args) {
-                Ok(output) => println!("{}", output),
+            match builtin.execute(actual_args) {
+                Ok(output) => {
+                    if output.is_empty() {
+                        continue;
+                    }
+                    if let Some(file_path) = output_file {
+                        match File::create(&file_path) {
+                            Ok(mut file) => match writeln!(file, "{}", output) {
+                                Ok(_) => {}
+                                Err(e) => eprintln!("Error writing to file: {}", e),
+                            },
+                            Err(e) => eprintln!("Error opening file {}: {}", file_path, e),
+                        }
+                    } else {
+                        println!("{}", output);
+                    }
+                }
                 Err(e) => eprintln!("Error executing builtin: {}", e),
             }
             continue;
         } else {
             if let Some(_path) = find_in_path(cmd) {
-                let child = Command::new(cmd).args(args).spawn();
+                let mut command = Command::new(cmd);
+                command.args(actual_args);
 
-                match child {
+                if let Some(file_path) = output_file {
+                    match File::create(&file_path) {
+                        Ok(file) => {
+                            command.stdout(Stdio::from(file));
+                        }
+                        Err(e) => {
+                            eprintln!("Error opening file {}: {}", file_path, e);
+                            continue;
+                        }
+                    }
+                }
+
+                match command.spawn() {
                     Ok(mut child_process) => {
                         let _ = child_process.wait();
                     }
