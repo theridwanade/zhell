@@ -33,6 +33,7 @@ fn main() {
 
         let mut actual_args = Vec::new();
         let mut output_file = None;
+        let mut error_output_file = None;
         let mut i = 0;
 
         while i < raw_args.len() {
@@ -43,6 +44,11 @@ fn main() {
                 } else {
                     eprintln!("Syntax error: expected file after '{}'", raw_args[i]);
                     break;
+                }
+            } else if raw_args[i] == "2>" {
+                if i + 1 < raw_args.len() {
+                    error_output_file = Some(raw_args[i + 1].clone());
+                    i += 2;
                 }
             } else {
                 actual_args.push(raw_args[i].clone());
@@ -68,7 +74,19 @@ fn main() {
                         println!("{}", output);
                     }
                 }
-                Err(e) => eprintln!("Error executing builtin: {}", e),
+                Err(e) => {
+                    if let Some(file_path) = error_output_file {
+                        match File::create(&file_path) {
+                            Ok(mut file) => match writeln!(file, "{}", e) {
+                                Ok(_) => {}
+                                Err(e) => eprintln!("Error writing to file: {}", e),
+                            },
+                            Err(e) => eprintln!("Error opening file {}: {}", file_path, e),
+                        }
+                    } else {
+                        eprintln!("{}", e)
+                    }
+                }
             }
             continue;
         } else {
@@ -80,6 +98,18 @@ fn main() {
                     match File::create(&file_path) {
                         Ok(file) => {
                             command.stdout(Stdio::from(file));
+                        }
+                        Err(e) => {
+                            eprintln!("Error opening file {}: {}", file_path, e);
+                            continue;
+                        }
+                    }
+                }
+
+                if let Some(file_path) = error_output_file {
+                    match File::create(&file_path) {
+                        Ok(file) => {
+                            command.stderr(Stdio::from(file));
                         }
                         Err(e) => {
                             eprintln!("Error opening file {}: {}", file_path, e);
