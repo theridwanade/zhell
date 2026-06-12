@@ -1,5 +1,5 @@
 use std::{
-    fs::File,
+    fs::{File, OpenOptions},
     io::{self, Write},
     process::{Command, Stdio},
 };
@@ -34,6 +34,7 @@ fn main() {
         let mut actual_args = Vec::new();
         let mut output_file = None;
         let mut error_output_file = None;
+        let mut to_append_output = false;
         let mut i = 0;
 
         while i < raw_args.len() {
@@ -50,6 +51,14 @@ fn main() {
                     error_output_file = Some(raw_args[i + 1].clone());
                     i += 2;
                 }
+            } else if raw_args[i] == ">>" || raw_args[i] == "1>>" {
+                output_file = Some(raw_args[i + 1].clone());
+                to_append_output = true;
+                i += 2;
+            } else if raw_args[i] == "2>>" {
+                error_output_file = Some(raw_args[i + 1].clone());
+                to_append_output = true;
+                i += 2;
             } else {
                 actual_args.push(raw_args[i].clone());
                 i += 1;
@@ -58,18 +67,32 @@ fn main() {
 
         if let Some(builtin) = Builtin::parse(cmd) {
             if let Some(ref file_path) = output_file {
-                let _ = File::create(file_path);
+                if to_append_output {
+                    let _ = OpenOptions::new().create(true).append(true).open(file_path);
+                } else {
+                    let _ = File::create(file_path);
+                }
             }
             if let Some(ref file_path) = error_output_file {
-                let _ = File::create(file_path);
+                if to_append_output {
+                    let _ = OpenOptions::new().create(true).append(true).open(file_path);
+                } else {
+                    let _ = File::create(file_path);
+                }
             }
             match builtin.execute(actual_args) {
                 Ok(output) => {
-                    if output.is_empty() {
-                        continue;
-                    }
                     if let Some(file_path) = output_file {
-                        match File::create(&file_path) {
+                        let file_result = if to_append_output {
+                            OpenOptions::new()
+                                .create(true)
+                                .append(true)
+                                .open(&file_path)
+                        } else {
+                            File::create(&file_path)
+                        };
+
+                        match file_result {
                             Ok(mut file) => match writeln!(file, "{}", output) {
                                 Ok(_) => {}
                                 Err(e) => eprintln!("Error writing to file: {}", e),
@@ -77,12 +100,23 @@ fn main() {
                             Err(e) => eprintln!("Error opening file {}: {}", file_path, e),
                         }
                     } else {
-                        println!("{}", output);
+                        if !output.is_empty() {
+                            println!("{}", output);
+                        }
                     }
                 }
                 Err(e) => {
                     if let Some(file_path) = error_output_file {
-                        match File::create(&file_path) {
+                        let file_result = if to_append_output {
+                            OpenOptions::new()
+                                .create(true)
+                                .append(true)
+                                .open(&file_path)
+                        } else {
+                            File::create(&file_path)
+                        };
+
+                        match file_result {
                             Ok(mut file) => match writeln!(file, "{}", e) {
                                 Ok(_) => {}
                                 Err(e) => eprintln!("Error writing to file: {}", e),
@@ -101,7 +135,16 @@ fn main() {
                 command.args(actual_args);
 
                 if let Some(file_path) = output_file {
-                    match File::create(&file_path) {
+                    let file_result = if to_append_output {
+                        OpenOptions::new()
+                            .create(true)
+                            .append(true)
+                            .open(&file_path)
+                    } else {
+                        File::create(&file_path)
+                    };
+
+                    match file_result {
                         Ok(file) => {
                             command.stdout(Stdio::from(file));
                         }
@@ -113,7 +156,15 @@ fn main() {
                 }
 
                 if let Some(file_path) = error_output_file {
-                    match File::create(&file_path) {
+                    let file_result = if to_append_output {
+                        OpenOptions::new()
+                            .create(true)
+                            .append(true)
+                            .open(&file_path)
+                    } else {
+                        File::create(&file_path)
+                    };
+                    match file_result {
                         Ok(file) => {
                             command.stderr(Stdio::from(file));
                         }
