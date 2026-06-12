@@ -57,6 +57,12 @@ fn main() {
         }
 
         if let Some(builtin) = Builtin::parse(cmd) {
+            if let Some(ref file_path) = output_file {
+                let _ = File::create(file_path);
+            }
+            if let Some(ref file_path) = error_output_file {
+                let _ = File::create(file_path);
+            }
             match builtin.execute(actual_args) {
                 Ok(output) => {
                     if output.is_empty() {
