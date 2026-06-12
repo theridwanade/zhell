@@ -8,23 +8,45 @@ mod lexer;
 mod utils;
 
 use builtin::Builtin;
+use rustyline::{DefaultEditor, Result, error::ReadlineError};
 
 use crate::{lexer::tokenize, utils::find_in_path};
 
-fn main() {
+fn main() -> Result<()> {
+    let mut rl = DefaultEditor::new()?;
+    if rl.load_history("history.txt").is_err() {
+        println!("No previous history.");
+    }
     loop {
-        print!("$ ");
-        io::stdout().flush().unwrap();
+        let readline = rl.readline("$ ");
 
         let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
-        let input = input.trim();
+        match readline {
+            Ok(line) => {
+                rl.add_history_entry(line.as_str())?;
+                input = line;
+            }
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
+        }
 
-        if input.is_empty() {
+        let command_input = input.trim();
+
+        if command_input.is_empty() {
             continue;
         }
 
-        let cmd_token = tokenize(input);
+        let cmd_token = tokenize(command_input);
         if cmd_token.is_empty() {
             continue;
         }
@@ -198,4 +220,6 @@ fn main() {
 
         println!("{}: command not found", cmd);
     }
+    let _ = rl.save_history("history.txt");
+    Ok(())
 }
