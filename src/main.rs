@@ -38,30 +38,39 @@ fn main() {
         let mut i = 0;
 
         while i < raw_args.len() {
-            if raw_args[i] == ">" || raw_args[i] == "1>" {
-                if i + 1 < raw_args.len() {
+            match raw_args[i].as_str() {
+                ">" | "1>" => {
+                    if i + 1 < raw_args.len() {
+                        output_file = Some(raw_args[i + 1].clone());
+                        i += 2;
+                    } else {
+                        eprintln!("Syntax error: expected file after '{}'", raw_args[i]);
+                        break;
+                    }
+                }
+                "2>" => {
+                    if i + 1 < raw_args.len() {
+                        error_output_file = Some(raw_args[i + 1].clone());
+                        i += 2;
+                    } else {
+                        eprintln!("Syntax error: expected file after '{}'", raw_args[i]);
+                        break;
+                    }
+                }
+                ">>" | "1>>" => {
                     output_file = Some(raw_args[i + 1].clone());
+                    to_append_output = true;
                     i += 2;
-                } else {
-                    eprintln!("Syntax error: expected file after '{}'", raw_args[i]);
-                    break;
                 }
-            } else if raw_args[i] == "2>" {
-                if i + 1 < raw_args.len() {
+                "2>>" => {
                     error_output_file = Some(raw_args[i + 1].clone());
+                    to_append_output = true;
                     i += 2;
                 }
-            } else if raw_args[i] == ">>" || raw_args[i] == "1>>" {
-                output_file = Some(raw_args[i + 1].clone());
-                to_append_output = true;
-                i += 2;
-            } else if raw_args[i] == "2>>" {
-                error_output_file = Some(raw_args[i + 1].clone());
-                to_append_output = true;
-                i += 2;
-            } else {
-                actual_args.push(raw_args[i].clone());
-                i += 1;
+                _ => {
+                    actual_args.push(raw_args[i].clone());
+                    i += 1;
+                }
             }
         }
 
