@@ -14,6 +14,8 @@ pub enum Builtin {
 }
 
 impl Builtin {
+    pub const COMMANDS: [&'static str; 5] = ["exit", "echo", "type", "pwd", "cd"];
+    
     pub fn parse(cmd: &str) -> Option<Self> {
         match cmd {
             "exit" => Some(Builtin::Exit),

@@ -8,15 +8,15 @@ mod lexer;
 mod utils;
 
 use builtin::Builtin;
-use rustyline::{DefaultEditor, Result, error::ReadlineError};
+use rustyline::{Editor, Result, error::ReadlineError, history::DefaultHistory};
 
-use crate::{lexer::tokenize, utils::find_in_path};
+use crate::{lexer::tokenize, utils::{ZhellHelper, find_in_path}};
 
 fn main() -> Result<()> {
-    let mut rl = DefaultEditor::new()?;
-    if rl.load_history("history.txt").is_err() {
-        println!("No previous history.");
-    }
+    let mut rl = Editor::<ZhellHelper, DefaultHistory>::new()?;
+    let _ = rl.load_history("history.txt");
+    let helper = ZhellHelper;
+    rl.set_helper(Some(helper));
     loop {
         let readline = rl.readline("$ ");
 
