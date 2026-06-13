@@ -70,7 +70,7 @@ impl Completer for ZhellHelper {
 
         candidates.sort();
         candidates.dedup();
-        
+
         Ok((word_start, candidates))
     }
 }
@@ -236,10 +236,48 @@ pub fn execute_external_command(cmd: &str, args: RawArgs) -> Result<()> {
     Ok(())
 }
 
-
 pub fn get_current_working_directory() -> Result<String> {
     match env::current_dir() {
         Ok(path) => Ok(path.display().to_string()),
         Err(e) => Err(e),
     }
+}
+
+pub fn command_prompt() -> Result<String> {
+    let current_working_dir = get_current_working_directory()?;
+    let user = match env::var("USER") {
+        Ok(user) => user,
+        Err(_) => {
+            eprintln!("Error: Could not get the current user");
+            String::from("unknown")
+        }
+    };
+
+    let hostname = match hostname::get() {
+        Ok(hostname) => match hostname.into_string() {
+            Ok(hostname_str) => hostname_str,
+            Err(_) => {
+                eprintln!("Error: Could not convert hostname to string");
+                String::from("unknown")
+            }
+        },
+        Err(_) => {
+            eprintln!("Error: Could not get the hostname");
+            String::from("unknown")
+        }
+    };
+    let home = match env::var("HOME") {
+        Ok(home) => home,
+        Err(_) => {
+            eprintln!("Error: Could not get the home directory");
+            String::from("unknown")
+        }
+    };
+
+    if current_working_dir.starts_with(&home) {
+        let relative_path = current_working_dir.trim_start_matches(&home);
+        return Ok(format!("{}@{}:~{}$ ", user, hostname, relative_path));
+    }
+    
+    Ok(format!("{}@{}:~{}$ ", user, hostname, current_working_dir))
 }

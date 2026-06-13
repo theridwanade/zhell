@@ -11,7 +11,7 @@ use rustyline::{
 
 use crate::{
     lexer::tokenize,
-    utils::{ZhellHelper, execute_builtin_command, execute_external_command, get_current_working_directory, process_raw_args},
+    utils::{ZhellHelper, command_prompt, execute_builtin_command, execute_external_command, process_raw_args},
 };
 
 fn main() -> Result<()> {
@@ -24,8 +24,8 @@ fn main() -> Result<()> {
     let helper = ZhellHelper;
     rl.set_helper(Some(helper));
     loop {
-        let current_working_dir = get_current_working_directory()?;
-        let readline = rl.readline(&format!("{}$ ", current_working_dir));
+        let command_prompt = command_prompt()?;
+        let readline = rl.readline(&format!("{}", command_prompt));
         match readline {
             Ok(line) => {
                 let _ = rl.add_history_entry(line.as_str());
