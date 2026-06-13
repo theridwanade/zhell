@@ -235,3 +235,11 @@ pub fn execute_external_command(cmd: &str, args: RawArgs) -> Result<()> {
 
     Ok(())
 }
+
+
+pub fn get_current_working_directory() -> Result<String> {
+    match env::current_dir() {
+        Ok(path) => Ok(path.display().to_string()),
+        Err(e) => Err(e),
+    }
+}
