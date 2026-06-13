@@ -5,7 +5,9 @@ mod utils;
 use std::io::ErrorKind;
 
 use builtin::Builtin;
-use rustyline::{Editor, Result, error::ReadlineError, history::DefaultHistory};
+use rustyline::{
+    CompletionType, Config, Editor, Result, error::ReadlineError, history::DefaultHistory,
+};
 
 use crate::{
     lexer::tokenize,
@@ -13,7 +15,11 @@ use crate::{
 };
 
 fn main() -> Result<()> {
-    let mut rl = Editor::<ZhellHelper, DefaultHistory>::new()?;
+    let config = Config::builder()
+        .completion_type(CompletionType::List)
+        .build();
+
+    let mut rl = Editor::<ZhellHelper, DefaultHistory>::with_config(config)?;
     let _ = rl.load_history("history.txt");
     let helper = ZhellHelper;
     rl.set_helper(Some(helper));
@@ -36,7 +42,7 @@ fn main() -> Result<()> {
                 } else {
                     if let Err(e) = execute_external_command(cmd, processed_args) {
                         if e.kind() == ErrorKind::NotFound {
-                           eprintln!("{}: command not found", cmd);
+                            eprintln!("{}: command not found", cmd);
                         } else {
                             eprintln!("Error: {:?}", e);
                         }
