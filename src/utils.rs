@@ -279,5 +279,5 @@ pub fn command_prompt() -> Result<String> {
         return Ok(format!("{}@{}:~{}$ ", user, hostname, relative_path));
     }
     
-    Ok(format!("{}@{}:~{}$ ", user, hostname, current_working_dir))
+    Ok(format!("{}@{}:{}$ ", user, hostname, current_working_dir))
 }
