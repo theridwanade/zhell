@@ -42,9 +42,7 @@ impl Completer for ZhellHelper {
         let word_start = line[..pos].rfind(' ').map_or(0, |i| i + 1);
         let current_word = &line[word_start..pos];
 
-        // Only autocomplete built-ins if it's the first word on the line
         if word_start == 0 {
-            // Iterate over the constant we added to your Builtin implementation
             for &cmd in &Builtin::COMMANDS {
                 if cmd.starts_with(current_word) {
                     candidates.push(format!("{} ", cmd.to_string()));
@@ -52,6 +50,27 @@ impl Completer for ZhellHelper {
             }
         }
 
+        if let Ok(path_var) = env::var("PATH") {
+            for dir in env::split_paths(&path_var) {
+                if let Ok(entries) = fs::read_dir(&dir) {
+                    for entry in entries.flatten() {
+                        if let Ok(file_type) = entry.file_type() {
+                            if file_type.is_file() || file_type.is_symlink() {
+                                if let Ok(file_name) = entry.file_name().into_string() {
+                                    if file_name.starts_with(current_word) {
+                                        candidates.push(format!("{} ", file_name));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        candidates.sort();
+        candidates.dedup();
+        
         Ok((word_start, candidates))
     }
 }
