@@ -3,7 +3,7 @@ use std::{
     io::{Error, ErrorKind},
 };
 
-use crate::utils::{find_in_path, get_current_working_directory};
+use crate::utils::find_in_path;
 
 pub enum Builtin {
     Exit,
@@ -11,11 +11,12 @@ pub enum Builtin {
     Type,
     Pwd,
     Cd,
+    History,
 }
 
 impl Builtin {
-    pub const COMMANDS: [&'static str; 5] = ["exit", "echo", "type", "pwd", "cd"];
-    
+    pub const COMMANDS: [&'static str; 6] = ["exit", "echo", "type", "pwd", "cd", "history"];
+
     pub fn parse(cmd: &str) -> Option<Self> {
         match cmd {
             "exit" => Some(Builtin::Exit),
@@ -23,6 +24,7 @@ impl Builtin {
             "type" => Some(Builtin::Type),
             "pwd" => Some(Builtin::Pwd),
             "cd" => Some(Builtin::Cd),
+            "history" => Some(Builtin::History),
             _ => None,
         }
     }
@@ -41,7 +43,10 @@ impl Builtin {
                     Ok(format!("{}: not found", args))
                 }
             }
-            Builtin::Pwd => get_current_working_directory(),
+            Builtin::Pwd => match env::current_dir() {
+                Ok(current_dir) => Ok(format!("{}", current_dir.display())),
+                Err(e) => Err(e),
+            },
             Builtin::Cd => {
                 let target_dir = if args.is_empty() || args == "~" {
                     match env::var("HOME") {
@@ -87,6 +92,7 @@ impl Builtin {
                     )),
                 }
             }
+            Builtin::History => Ok("History feature is not implemented yet.".to_string()),
         }
     }
 }
