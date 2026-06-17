@@ -236,15 +236,8 @@ pub fn execute_external_command(cmd: &str, args: RawArgs) -> Result<()> {
     Ok(())
 }
 
-pub fn get_current_working_directory() -> Result<String> {
-    match env::current_dir() {
-        Ok(path) => Ok(path.display().to_string()),
-        Err(e) => Err(e),
-    }
-}
-
 pub fn command_prompt() -> Result<String> {
-    let current_working_dir = get_current_working_directory()?;
+    let current_working_dir = env::current_dir()?.display().to_string();
     let user = match env::var("USER") {
         Ok(user) => user,
         Err(_) => {
