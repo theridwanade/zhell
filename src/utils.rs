@@ -280,3 +280,10 @@ pub fn command_prompt() -> Result<String> {
 
     Ok(format!("{}@{}:{}$ ", user, hostname, current_working_dir))
 }
+
+pub fn get_history_path() -> Option<PathBuf> {
+    home::home_dir().map(|mut path| {
+        path.push(".zhell_history");
+        path
+    })
+}

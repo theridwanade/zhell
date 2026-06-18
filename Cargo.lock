@@ -221,6 +221,7 @@ dependencies = [
 name = "zhell"
 version = "0.1.0"
 dependencies = [
+ "home",
  "hostname",
  "rustyline",
 ]

@@ -6,12 +6,17 @@ use std::io::ErrorKind;
 
 use builtin::Builtin;
 use rustyline::{
-    CompletionType, Config, Editor, Result, error::ReadlineError, history::DefaultHistory,
+    CompletionType, Config, Editor, Result,
+    error::ReadlineError,
+    history::{DefaultHistory},
 };
 
 use crate::{
     lexer::tokenize,
-    utils::{ZhellHelper, command_prompt, execute_builtin_command, execute_external_command, process_raw_args},
+    utils::{
+        ZhellHelper, command_prompt, execute_builtin_command, execute_external_command,
+        get_history_path, process_raw_args,
+    },
 };
 
 fn main() -> Result<()> {
@@ -20,6 +25,12 @@ fn main() -> Result<()> {
         .build();
 
     let mut rl = Editor::<ZhellHelper, DefaultHistory>::with_config(config)?;
+    let history_path = get_history_path();
+    if let Some(ref path) = history_path {
+        if rl.load_history(path).is_err() {
+            println!("No previous history found. Creating a new session.");
+        }
+    }
     let _ = rl.load_history("history.txt");
     let helper = ZhellHelper;
     rl.set_helper(Some(helper));
@@ -33,6 +44,9 @@ fn main() -> Result<()> {
 
                 if input.is_empty() {
                     continue;
+                }
+                if let Some(ref path) = history_path {
+                    let _ = rl.append_history(path);
                 }
 
                 let (cmd, raw_args) = (input[0].as_str(), input[1..].to_vec());
@@ -64,6 +78,5 @@ fn main() -> Result<()> {
             }
         }
     }
-    let _ = rl.save_history("history.txt");
     Ok(())
 }
