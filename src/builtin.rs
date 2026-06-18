@@ -2,10 +2,10 @@ use std::{
     env,
     io::{Error, ErrorKind},
 };
-
+#[allow(unused_imports)]
 use rustyline::{
     Editor,
-    history::{DefaultHistory},
+    history::{self, DefaultHistory},
 };
 
 use crate::utils::{ZhellHelper, find_in_path};
@@ -39,17 +39,17 @@ impl Builtin {
         args: Vec<String>,
         rl: &Editor<ZhellHelper, DefaultHistory>,
     ) -> Result<String, Error> {
-        let args = args.join(" ");
+        let joined_args = args.join(" ");
         match self {
             Builtin::Exit => std::process::exit(0),
-            Builtin::Echo => Ok(format!("{}", args)),
+            Builtin::Echo => Ok(format!("{}", joined_args)),
             Builtin::Type => {
-                if Builtin::parse(args.as_str()).is_some() {
-                    Ok(format!("{} is a shell builtin", args))
-                } else if let Some(path) = find_in_path(args.as_str()) {
-                    Ok(format!("{} is {}", args, path.display()))
+                if Builtin::parse(joined_args.as_str()).is_some() {
+                    Ok(format!("{} is a shell builtin", joined_args))
+                } else if let Some(path) = find_in_path(joined_args.as_str()) {
+                    Ok(format!("{} is {}", joined_args, path.display()))
                 } else {
-                    Ok(format!("{}: not found", args))
+                    Ok(format!("{}: not found", joined_args))
                 }
             }
             Builtin::Pwd => match env::current_dir() {
@@ -57,17 +57,17 @@ impl Builtin {
                 Err(e) => Err(e),
             },
             Builtin::Cd => {
-                let target_dir = if args.is_empty() || args == "~" {
+                let target_dir = if joined_args.is_empty() || joined_args == "~" {
                     match env::var("HOME") {
                         Ok(home) => home,
                         Err(_) => ".".to_string(),
                     }
-                } else if args.starts_with("~/") {
+                } else if joined_args.starts_with("~/") {
                     match env::var("HOME") {
-                        Ok(home) => format!("{}{}", home, &args[1..]),
-                        Err(_) => args.to_string(),
+                        Ok(home) => format!("{}{}", home, &joined_args[1..]),
+                        Err(_) => joined_args.to_string(),
                     }
-                } else if args.starts_with("-") {
+                } else if joined_args.starts_with("-") {
                     match env::var("OLDPWD") {
                         Ok(oldpwd) => oldpwd,
                         Err(_) => {
@@ -75,7 +75,7 @@ impl Builtin {
                         }
                     }
                 } else {
-                    args.to_string()
+                    joined_args.to_string()
                 };
 
                 let previous_dir = match env::current_dir() {
@@ -103,14 +103,25 @@ impl Builtin {
             }
             Builtin::History => {
                 let history = rl.history();
-                let history_string: String = history
+                let history_list: Vec<String> = history
                     .iter()
                     .enumerate()
                     .map(|(index, entry)| format!(" {:4}  {}", index + 1, entry))
-                    .collect::<Vec<String>>()
-                    .join("\n");
+                    .collect();
 
-                Ok(history_string)
+                let display_limit = if let Some(first_arg) = args.first() {
+                    first_arg.parse::<usize>().ok()
+                } else {
+                    None
+                };
+
+                let final_lines = if let Some(n) = display_limit {
+                    let start_index = history_list.len().saturating_sub(n);
+                    &history_list[start_index..]
+                } else {
+                    &history_list[..]
+                };
+                Ok(final_lines.join("\n"))
             }
         }
     }

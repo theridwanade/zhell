@@ -31,7 +31,6 @@ fn main() -> Result<()> {
             println!("No previous history found. Creating a new session.");
         }
     }
-    let _ = rl.load_history("history.txt");
     let helper = ZhellHelper;
     rl.set_helper(Some(helper));
     loop {
