@@ -3,7 +3,12 @@ use std::{
     io::{Error, ErrorKind},
 };
 
-use crate::utils::find_in_path;
+use rustyline::{
+    Editor,
+    history::{DefaultHistory},
+};
+
+use crate::utils::{ZhellHelper, find_in_path};
 
 pub enum Builtin {
     Exit,
@@ -29,7 +34,11 @@ impl Builtin {
         }
     }
 
-    pub fn execute(&self, args: Vec<String>) -> Result<String, Error> {
+    pub fn execute(
+        &self,
+        args: Vec<String>,
+        rl: &Editor<ZhellHelper, DefaultHistory>,
+    ) -> Result<String, Error> {
         let args = args.join(" ");
         match self {
             Builtin::Exit => std::process::exit(0),
@@ -92,7 +101,17 @@ impl Builtin {
                     )),
                 }
             }
-            Builtin::History => Ok("History feature is not implemented yet.".to_string()),
+            Builtin::History => {
+                let history = rl.history();
+                let history_string: String = history
+                    .iter()
+                    .enumerate()
+                    .map(|(index, entry)| format!(" {:4}  {}", index + 1, entry))
+                    .collect::<Vec<String>>()
+                    .join("\n");
+
+                Ok(history_string)
+            }
         }
     }
 }

@@ -39,7 +39,7 @@ fn main() -> Result<()> {
                 let processed_args = process_raw_args(&raw_args);
 
                 if let Some(builtin) = Builtin::parse(cmd) {
-                    execute_builtin_command(builtin, processed_args);
+                    execute_builtin_command(builtin, processed_args, &rl);
                 } else {
                     if let Err(e) = execute_external_command(cmd, processed_args) {
                         if e.kind() == ErrorKind::NotFound {

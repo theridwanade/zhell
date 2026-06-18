@@ -1,3 +1,5 @@
+use rustyline::Editor;
+use rustyline::history::DefaultHistory;
 use rustyline::{Context, completion::Completer};
 use std::io::{Error, ErrorKind, Result, Write};
 use std::{
@@ -134,7 +136,11 @@ pub fn process_raw_args(raw_args: &Vec<String>) -> RawArgs {
     }
 }
 
-pub fn execute_builtin_command(builtin: Builtin, args: RawArgs) {
+pub fn execute_builtin_command(
+    builtin: Builtin,
+    args: RawArgs,
+    rl: &Editor<ZhellHelper, DefaultHistory>,
+) {
     if let Some(ref file_path) = args.output_file {
         if args.to_append_output {
             let _ = OpenOptions::new().create(true).append(true).open(file_path);
@@ -149,7 +155,7 @@ pub fn execute_builtin_command(builtin: Builtin, args: RawArgs) {
             let _ = File::create(file_path);
         }
     }
-    match builtin.execute(args.actual_args) {
+    match builtin.execute(args.actual_args, rl) {
         Ok(output) => {
             if let Some(file_path) = args.output_file {
                 let file_result = if args.to_append_output {
@@ -271,6 +277,6 @@ pub fn command_prompt() -> Result<String> {
         let relative_path = current_working_dir.trim_start_matches(&home);
         return Ok(format!("{}@{}:~{}$ ", user, hostname, relative_path));
     }
-    
+
     Ok(format!("{}@{}:{}$ ", user, hostname, current_working_dir))
 }
