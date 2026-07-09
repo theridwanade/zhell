@@ -1,11 +1,11 @@
-use std::{
-    env,
-    io::{Error, ErrorKind},
-};
 #[allow(unused_imports)]
 use rustyline::{
     Editor,
     history::{self, DefaultHistory},
+};
+use std::{
+    env,
+    io::{Error, ErrorKind},
 };
 
 use crate::utils::{ZhellHelper, find_in_path};
@@ -41,7 +41,13 @@ impl Builtin {
     ) -> Result<String, Error> {
         let joined_args = args.join(" ");
         match self {
-            Builtin::Exit => std::process::exit(0),
+            Builtin::Exit => {
+                let exit_code = match joined_args.parse::<i32>() {
+                    Ok(code) => code,
+                    Err(_) => 0
+                };
+                std::process::exit(exit_code);
+            }
             Builtin::Echo => Ok(format!("{}", joined_args)),
             Builtin::Type => {
                 if Builtin::parse(joined_args.as_str()).is_some() {
