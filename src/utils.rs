@@ -287,3 +287,10 @@ pub fn get_history_path() -> Option<PathBuf> {
         path
     })
 }
+
+pub fn fetch_var(var_string: &String) -> String {
+   match env::var(var_string) {
+       Ok(value) => value,
+       Err(_) => String::new()
+   }
+}
